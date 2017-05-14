@@ -1,0 +1,16 @@
+[
+{
+  "modid": "eirairc",
+  "name": "EiraIRC",
+  "description": "Connect your server or client to IRC and Twitch Chat and easily share your screenshots with other players.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "http://blay09.net",
+  "updateUrl": "http://minecraft.curseforge.com/mc-mods/68420-eirairc",
+  "authors": ["BlayTheNinth", "Txuritan"],
+  "credits": "BlayTheNinth",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]

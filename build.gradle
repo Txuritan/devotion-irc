@@ -1,0 +1,131 @@
+buildscript {
+    repositories {
+        jcenter()
+        maven {
+            name = "forge"
+            url = "http://files.minecraftforge.net/maven"
+        }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.2-SNAPSHOT'
+    }
+}
+apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'maven'
+
+def BUILD_NUMBER = System.getenv("BUILD_NUMBER") ?: "0"
+def MAVEN_REPO = System.getenv("MAVEN_REPO") ?: ""
+def MAVEN_USERNAME = System.getenv("MAVEN_USERNAME") ?: ""
+def MAVEN_PASSWORD = System.getenv("MAVEN_PASSWORD") ?: ""
+
+version = "5.0.2"
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+group = "net.blay09.mods"
+archivesBaseName = "eirairc"
+
+minecraft {
+    //version = "1.8.9-11.15.0.1684"
+    version = "1.11.2-13.20.0.2228"
+    runDir = "run"
+    
+    //mappings = "stable_20"
+    mappings = 'snapshot_20170301'
+}
+
+processResources
+{
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+                
+        expand 'version':project.version, 'mcversion':project.minecraft.version
+    }
+        
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
+
+repositories {
+    maven {
+        name = "dynmap"
+        url = "http://repo.mikeprimm.com/"
+    }
+    maven {
+        name = "eiranet"
+        url = "http://artifactory.blay09.net/artifactory/jenkins-maven/"
+    }
+    flatDir {
+        dirs 'libs'
+    }
+}
+
+dependencies {
+    deobfCompile 'net.blay09.mods:EiraMoticons_1.11:5.2.1'
+    deobfCompile 'us.dynmap:DynmapCoreAPI:2.4'
+    deobfCompile name: 'mod-tabbychat-2-2.2.1-mc1.11.2'
+}
+
+jar {
+    from sourceSets.api.output
+    appendix "mc" + minecraft.version
+}
+
+// It would seem the provided configuration ForgeGradle gives us doesn't work correctly in IDEA without these lines.
+idea {
+    module {
+        scopes.PROVIDED.plus += [configurations.provided];
+    }
+}
+
+sourceJar {
+    appendix "mc" + minecraft.version
+}
+
+task apiJar(type: Jar) {
+    from sourceSets.api.output
+    classifier "api"
+    appendix "mc" + minecraft.version
+}
+
+task devJar(type: Jar) {
+    from sourceSets.main.output
+    from sourceSets.api.output
+    classifier "dev"
+    appendix "mc" + minecraft.version
+}
+
+artifacts {
+    archives apiJar
+    archives devJar
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: MAVEN_REPO) {
+                authentication(userName: MAVEN_USERNAME, password: MAVEN_PASSWORD)
+            }
+            
+            pom {
+                groupId = project.group
+                version = project.version
+                artifactId = project.archivesBaseName
+            }
+
+            pom.withXml {
+                asNode().dependencies.dependency.findAll {
+                    it.scope.text() == "compile"
+                }.each {
+                    if(it.optional)
+                        it.optional.value = 'true'
+                    else
+                        it.appendNode('optional', 'true');
+                }
+            }
+        }
+    }
+}
